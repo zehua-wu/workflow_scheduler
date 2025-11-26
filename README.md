@@ -1,8 +1,9 @@
 Branch-Aware Workflow Scheduler for WSI Analysis
 
-A high-concurrency, multi-tenant workflow scheduler designed for processing Gigapixel Whole Slide Images (WSI).
+A concurrency, multi-tenant workflow scheduler designed for processing Gigapixel Whole Slide Images (WSI).
 
-This system implements a Branch-Aware DAG Scheduler that enforces serial execution within branches and parallel execution across branches, bounded by global worker limits and per-user concurrency quotas. It features a Real AI Inference Engine integrating InstanSeg and OpenSlide to perform cell nuclei segmentation on pathological slides.
+This system implements a Branch-Aware DAG Scheduler that enforces serial execution within branches and parallel execution across branches, bounded by global worker limits and per-user concurrency quotas. It features a Real AI Inference Engine integrating InstanSeg and OpenSlide to perform cell segmentation.
+
 
 🚀 Key Features
 
@@ -24,13 +25,7 @@ Inter-branch: Parallel execution.
 
 Fail-Fast: If a job fails/cancels, all subsequent pending jobs in that branch are auto-cancelled.
 
-Real WSI Inference:
 
-Supports .svs (Aperio) and standard image formats.
-
-Implements Tiled Inference (Sliding Window) with InstanSeg (PyTorch) to handle large slides without OOM.
-
-Outputs GeoJSON-style Polygons and visual overlays.
 
 🛠️ Architecture
 
@@ -41,6 +36,7 @@ Scheduler API (FastAPI): Handles DAG creation, job dispatching, and state manage
 Worker Engine: Integrated asyncio workers running Deep Learning tasks (InstanSeg/PyTorch) and WSI processing (OpenSlide).
 
 Database (PostgreSQL): Persistent storage for workflow states and job metadata.
+
 
 🏁 Quick Start
 
@@ -70,6 +66,7 @@ Place the file in the data/ directory at the project root:
 
 Note: If CMU-1.svs is not available, the system's SmartSlide adapter will gracefully fallback to processing standard images (e.g., data/test.png) using the same tiling logic.
 
+
 2. Build & Run
 
 Launch the full stack (Database + API + AI Engine):
@@ -78,6 +75,7 @@ docker-compose up --build
 
 
 Wait until you see: Uvicorn running on http://0.0.0.0:8000.
+
 
 3. Access the Dashboard
 
@@ -89,6 +87,7 @@ Create a Workflow: Click "+ New Workflow".
 Run Demo: Select both "Core Analysis" and "Visualization" branches. The system will automatically detect data/CMU-1.svs and begin tiled inference.
 
 Multi-User Test: Change the "User Context" input (e.g., to User2) to simulate multi-tenant queuing.
+
 
 📖 API Documentation (OpenAPI/Swagger)
 
@@ -104,6 +103,7 @@ POST /api/workflows: Create a new DAG.
 GET /api/workflows/{id}: Get real-time status (polled by Dashboard).
 
 POST /api/jobs/{id}/cancel: Cancel a running job (triggers Fail-Fast & Resource Reclaim).
+
 
 📊 Scaling Strategy (10x - 100x)
 
@@ -131,57 +131,4 @@ Database:
 
 Implement Read Replicas for the GET /status polling traffic.
 
-🧪 Testing & Monitoring
 
-Testing
-
-Unit Tests: Run pytest tests/ to verify the Scheduler's logic (e.g., User Slot limits, Branch dependencies).
-
-Integration Tests: Verify the end-to-end flow from API -> DB -> Worker -> Output File.
-
-Monitoring
-
-In a production environment:
-
-Metrics (Prometheus): Expose custom metrics:
-
-scheduler_active_users: Gauge (0-3).
-
-worker_busy_slots: Gauge (0-4).
-
-job_inference_duration_seconds: Histogram.
-
-Visualization (Grafana): Dashboards to track per-user queue latency and GPU utilization.
-
-Logging (ELK/Loki): Structured JSON logs with trace_id to follow a job's lifecycle across services.
-
-📂 Deliverables & Output Format
-
-Segmentation Results
-
-The system performs real inference using the InstanSeg-nuclei model. Results are exported to outputs/cells.json containing:
-
-{
-  "metadata": {
-    "source": "data/CMU-1.svs",
-    "dims": [46000, 32914],
-    "total_cells": 15420,
-    "model": "InstanSeg-Nuclei"
-  },
-  "cells": [
-    {
-      "id": 1,
-      "polygon": [[100, 100], [110, 100], [110, 110], [100, 110]],
-      "bbox": [100, 100, 10, 10],
-      "score": 0.95
-    }
-    // ...
-  ]
-}
-
-
-Design Decisions
-
-SmartSlide Adapter: A unified interface that wraps both OpenSlide and PIL, allowing the same Tiling/Batching logic to run on both professional SVS slides and standard PNGs for ease of testing.
-
-Pre-downloaded Weights: The Docker build process pre-fetches InstanSeg weights to ensure the container can start and run offline without runtime download latency.
