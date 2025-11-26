@@ -55,14 +55,14 @@ Download CMU-1.svs (~170MB) from the OpenSlide Test Data repository:
 Download Link
 
 Place the file in the data/ directory at the project root:
-"""
-# Your project structure should look like this:
-/branch-workflow-scheduler
+```text
+/branch-workflow-scheduler       <-- Project Root
   ├── docker-compose.yml
-  ├── app/
-  └── data/
-      └── CMU-1.svs  <-- Place file here
-"""
+  ├── Dockerfile
+  ├── app/                       <-- Source code (main.py, etc.)
+  ├── outputs/                   <-- Generated results appear here
+  └── data/                      <-- Input Data Directory
+      └── CMU-1.svs              <-- [!] Put the SVS file INSIDE here
 
 Note: If CMU-1.svs is not available, the system's SmartSlide adapter will gracefully fallback to processing standard images (e.g., data/test.png) using the same tiling logic.
 
