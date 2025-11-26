@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workflow Scheduler Dashboard</title>
+  <style>
+    /* =========================================
+       1. CSS Variables & Reset
+       ========================================= */
+    :root {
+      --bg-color: #f3f4f6;
+      --card-bg: #ffffff;
+      --sidebar-bg: #1f2937;
+      
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --success: #10b981;
+      --warning: #f59e0b;
+      
+      --text-main: #111827;
+      --text-sub: #6b7280;
+      --text-sidebar: #e5e7eb;
+      
+      --border-color: #e5e7eb;
+      --border-dark: #374151;
+      
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+    }
+
+    * { box-sizing: border-box; }
+    
+    body { 
+      margin: 0; 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+      background: var(--bg-color); 
+      color: var(--text-main); 
+      display: flex; 
+      height: 100vh; 
+      overflow: hidden; 
+    }
+
+    /* =========================================
+       2. Layout Components
+       ========================================= */
+    .app-container { display: flex; width: 100%; height: 100%; }
+    
+    /* Sidebar */
+    .sidebar { 
+      width: 300px; 
+      flex-shrink: 0;
+      background: var(--sidebar-bg); 
+      color: var(--text-sidebar); 
+      display: flex; 
+      flex-direction: column; 
+      padding: 24px; 
+      box-shadow: 4px 0 15px rgba(0,0,0,0.1); 
+      z-index: 10; 
+    }
+
+    /* Main Content */
+    .main { 
+      flex: 1; 
+      display: flex; 
+      flex-direction: column; 
+      overflow: hidden; 
+      position: relative; 
+    }
+
+    .header { 
+      background: var(--card-bg); 
+      padding: 16px 32px; 
+      border-bottom: 1px solid var(--border-color); 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+    }
+
+    .content { 
+      flex: 1; 
+      padding: 32px; 
+      overflow-y: auto; 
+      overflow-x: hidden;
+    }
+
+    /* =========================================
+       3. UI Components
+       ========================================= */
+    
+    /* Brand */
+    .brand { 
+      font-size: 20px; 
+      font-weight: 700; 
+      margin-bottom: 32px; 
+      color: #60a5fa; 
+      letter-spacing: -0.5px; 
+      display: flex; 
+      align-items: center; 
+      gap: 12px;
+    }
+    .brand-icon { font-size: 24px; }
+
+    /* Inputs */
+    .input-group { margin-bottom: 20px; }
+    .input-label { 
+      font-size: 12px; 
+      color: #9ca3af; 
+      margin-bottom: 6px; 
+      display: block; 
+      text-transform: uppercase; 
+      letter-spacing: 0.5px; 
+      font-weight: 600; 
+    }
+    .text-input { 
+      width: 100%; 
+      padding: 10px 12px; 
+      border-radius: var(--radius-sm); 
+      border: 1px solid var(--border-dark); 
+      background: #374151; 
+      color: white; 
+      outline: none; 
+      transition: border-color 0.2s; 
+    }
+    .text-input:focus { border-color: var(--primary); }
+    .text-input.light { background: white; border-color: #d1d5db; color: var(--text-main); }
+
+    /* Buttons */
+    .btn { 
+      padding: 10px 16px; 
+      border-radius: var(--radius-sm); 
+      border: none; 
+      cursor: pointer; 
+      font-weight: 600; 
+      font-size: 13px; 
+      transition: all 0.2s; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      gap: 8px; 
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    
+    .btn-primary { 
+      background: var(--primary); 
+      color: white; 
+      width: 100%; 
+      margin-bottom: 12px; 
+      box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.5); 
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+    
+    .btn-outline { 
+      background: transparent; 
+      border: 1px solid #4b5563; 
+      color: #e5e7eb; 
+      width: 100%; 
+    }
+    .btn-outline:hover { border-color: #9ca3af; color: white; background: rgba(255,255,255,0.05); }
+
+    .btn-cancel { background: white; border: 1px solid #d1d5db; color: #374151; }
+    .btn-cancel:hover { background: #f3f4f6; }
+
+    .btn-sm-cancel {
+      margin-top: 12px;
+      width: 100%;
+      background: white;
+      border: 1px solid var(--border-color);
+      color: var(--danger);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-sm-cancel:hover { background: #fef2f2; border-color: var(--danger); }
+
+    /* Workflow List */
+    .wf-list { 
+      flex: 1; 
+      overflow-y: auto; 
+      margin-top: 24px; 
+      padding-right: 4px; 
+    }
+    .wf-list::-webkit-scrollbar { width: 6px; }
+    .wf-list::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+
+    .wf-item { 
+      padding: 12px; 
+      border-radius: var(--radius-md); 
+      margin-bottom: 8px; 
+      cursor: pointer; 
+      border: 1px solid transparent; 
+      transition: all 0.2s; 
+      background: rgba(255,255,255,0.03); 
+    }
+    .wf-item:hover { background: rgba(255,255,255,0.1); }
+    .wf-item.active { 
+      background: rgba(59, 130, 246, 0.15); 
+      border-color: var(--primary); 
+      box-shadow: 0 0 0 1px var(--primary); 
+    }
+    .wf-item .name { 
+      font-weight: 600; 
+      font-size: 14px; 
+      margin-bottom: 4px; 
+      white-space: nowrap; 
+      overflow: hidden; 
+      text-overflow: ellipsis; 
+    }
+    .wf-item .meta { 
+      font-size: 11px; 
+      color: #9ca3af; 
+      display: flex; 
+      justify-content: space-between; 
+    }
+
+    /* Swimlanes */
+    .swimlanes-container { 
+      display: flex; 
+      gap: 24px; 
+      align-items: flex-start; 
+      padding-bottom: 40px; 
+    }
+    .branch-column {
+      flex: 0 0 320px;
+      background: #f9fafb;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-height: calc(100vh - 180px);
+      overflow-y: auto;
+    }
+    .branch-header { 
+      font-weight: 700; 
+      font-size: 14px; 
+      color: #374151; 
+      margin-bottom: 4px; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      text-transform: uppercase; 
+      letter-spacing: 0.5px; 
+    }
+    .branch-tag { 
+      background: var(--border-color); 
+      padding: 2px 8px; 
+      border-radius: 12px; 
+      font-size: 10px; 
+      color: var(--text-sub); 
+    }
+
+    /* Job Card */
+    .job-card { 
+      background: white; 
+      border-radius: var(--radius-md); 
+      padding: 16px; 
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+      border-left: 5px solid #d1d5db; 
+      position: relative; 
+      transition: transform 0.2s, box-shadow 0.2s; 
+    }
+    .job-card:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+    
+    .job-card.PENDING { border-left-color: var(--warning); }
+    .job-card.RUNNING { border-left-color: var(--primary); }
+    .job-card.SUCCEEDED { border-left-color: var(--success); }
+    .job-card.FAILED { border-left-color: var(--danger); background: #fef2f2; }
+    .job-card.CANCELLED { border-left-color: #9ca3af; background: #f3f4f6; opacity: 0.7; }
+
+    .job-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .job-type { font-weight: 700; font-size: 14px; color: var(--text-main); }
+    .job-id { font-family: 'SF Mono', 'Roboto Mono', monospace; font-size: 11px; color: var(--text-sub); margin-top: 4px; }
+
+    /* Progress Bar */
+    .progress-track { height: 6px; background: var(--bg-color); border-radius: 3px; margin-top: 12px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s ease-out; border-radius: 3px; }
+
+    /* Badges */
+    .status-badge { 
+      font-size: 10px; 
+      padding: 4px 8px; 
+      border-radius: 99px; 
+      font-weight: 700; 
+      text-transform: uppercase; 
+      letter-spacing: 0.5px; 
+      display: inline-block;
+    }
+    .status-badge.PENDING { background: #fffbeb; color: #b45309; border: 1px solid #fcd34d; }
+    .status-badge.RUNNING { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+    .status-badge.SUCCEEDED { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+    .status-badge.FAILED { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .status-badge.CANCELLED { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+
+    /* Visualization */
+    .preview-section { margin-top: 24px; border-top: 1px solid var(--border-color); padding-top: 24px; }
+    .preview-title { font-weight: 700; font-size: 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
+    
+    .preview-box { 
+      border: 1px solid var(--border-color); 
+      border-radius: var(--radius-md); 
+      padding: 10px; 
+      background: white; 
+      transition: box-shadow 0.2s; 
+    }
+    .preview-box:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    
+    .preview-img { width: 100%; height: auto; border-radius: 6px; background: var(--bg-color); display: block; aspect-ratio: 4/3; object-fit: cover; }
+    
+    .preview-meta { 
+      font-size: 12px; 
+      color: #4b5563; 
+      margin-top: 10px; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+    }
+    .preview-link { color: var(--primary); text-decoration: none; font-weight: 500; }
+    .preview-link:hover { text-decoration: underline; }
+
+    /* Modal */
+    .modal-overlay { 
+      display: none; 
+      position: fixed; 
+      top: 0; left: 0; 
+      width: 100%; height: 100%; 
+      background: rgba(0,0,0,0.5); 
+      z-index: 100; 
+      justify-content: center; 
+      align-items: center; 
+      backdrop-filter: blur(2px); 
+    }
+    .modal { 
+      background: white; 
+      padding: 24px; 
+      border-radius: var(--radius-lg); 
+      width: 400px; 
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); 
+      animation: slideUp 0.3s ease-out; 
+    }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    
+    .modal-title { margin-top: 0; margin-bottom: 20px; font-size: 18px; color: var(--text-main); }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+    
+    .checkbox-group { display: flex; flex-direction: column; gap: 8px; }
+    .checkbox-item { 
+      display: flex; 
+      align-items: center; 
+      gap: 10px; 
+      padding: 8px; 
+      border: 1px solid var(--border-color); 
+      border-radius: var(--radius-sm); 
+      cursor: pointer; 
+      transition: background 0.2s; 
+    }
+    .checkbox-item:hover { background: #f9fafb; }
+    .checkbox-item input { accent-color: var(--primary); transform: scale(1.1); }
+    .checkbox-text { font-weight: 600; font-size: 13px; }
+    .checkbox-sub { font-size: 12px; color: var(--text-sub); }
+
+    .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+    
+    /* Utility Classes */
+    .hidden { display: none; }
+    .text-mono { font-family: 'SF Mono', 'Roboto Mono', monospace; }
+  </style>
+</head>
+<body>
+
+  <!-- Modal -->
+  <div id="createModal" class="modal-overlay">
+    <div class="modal">
+      <h3 class="modal-title">Create New Workflow</h3>
+      
+      <div class="form-group">
+        <label>Workflow Name</label>
+        <input type="text" id="newWfName" class="text-input light" placeholder="e.g., Batch Process #42">
+      </div>
+
+      <div class="form-group">
+        <label>Select Pipeline Branches</label>
+        <div class="checkbox-group">
+          <label class="checkbox-item">
+            <input type="checkbox" id="checkAnalysis" checked>
+            <div>
+              <div class="checkbox-text">Core Analysis</div>
+              <div class="checkbox-sub">Tissue Mask + InstanSeg (Long Running)</div>
+            </div>
+          </label>
+          
+          <label class="checkbox-item">
+            <input type="checkbox" id="checkViz" checked>
+            <div>
+              <div class="checkbox-text">Visualization</div>
+              <div class="checkbox-sub">Thumbnail Preview (Fast)</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" style="width: auto; margin-bottom: 0;" onclick="submitCustomWorkflow()">Create Workflow</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Layout -->
+  <div class="app-container">
+    <div class="sidebar">
+      <div class="brand">
+        <span class="brand-icon">🧬</span> InstanSeg Scheduler
+      </div>
+      
+      <div class="input-group">
+        <span class="input-label">User Context</span>
+        <input type="text" id="userIdInput" class="text-input" placeholder="Enter X-User-ID" value="User1">
+      </div>
+
+      <button class="btn btn-primary" onclick="openCreateModal()">
+        <span>+</span> New Workflow
+      </button>
+      <button class="btn btn-outline" onclick="loadWorkflows()">
+        <span>↻</span> Refresh List
+      </button>
+      
+      <div class="wf-list" id="workflowList">
+        <!-- JS Injected -->
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="header">
+        <div>
+          <h2 style="margin:0; font-size:18px; font-weight:700;" id="wfTitle">Select a Workflow</h2>
+          <div class="text-mono" style="font-size:12px; color:var(--text-sub); margin-top:4px;" id="wfIdDisplay"></div>
+        </div>
+        <div id="wfStatusBadge" class="status-badge hidden"></div>
+      </div>
+
+      <div class="content">
+        <!-- Swimlanes -->
+        <div id="swimlanes" class="swimlanes-container"></div>
+
+        <!-- Previews -->
+        <div id="previewSection" class="preview-section hidden">
+          <div class="preview-title"><span>🖼️</span> Results & Visualization</div>
+          <div class="preview-grid" id="previewGrid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  /**
+   * ==========================================
+   * 1. STATE & CONSTANTS
+   * ==========================================
+   */
+  const API_BASE = '/api';
+  let currentWorkflowId = null;
+  let pollInterval = null;
+
+  /**
+   * ==========================================
+   * 2. UTILS
+   * ==========================================
+   */
+  function getUserId() {
+    const uid = document.getElementById('userIdInput').value.trim();
+    if (!uid) { alert("Please enter User ID"); return null; }
+    return uid;
+  }
+
+  function formatJobType(type) {
+    if(!type) return "Unknown";
+    return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  }
+
+  /**
+   * ==========================================
+   * 3. API INTERACTIONS
+   * ==========================================
+   */
+  
+  // --- Workflows List ---
+  async function loadWorkflows() {
+    const uid = getUserId();
+    if (!uid) return;
+   
+    try {
+      const res = await fetch(`${API_BASE}/workflows`, { headers: { 'X-User-ID': uid } });
+      const data = await res.json();
+      renderWorkflowList(data);
+    } catch (e) { console.error(e); }
+  }
+
+  // --- Workflow Details ---
+  async function fetchWorkflowDetails() {
+    if (!currentWorkflowId) return;
+    const uid = getUserId();
+   
+    try {
+      const res = await fetch(`${API_BASE}/workflows/${currentWorkflowId}`, { headers: { 'X-User-ID': uid } });
+      if(res.status === 404) return;
+      const data = await res.json();
+      renderDashboard(data);
+    } catch (e) { console.error(e); }
+  }
+
+  // --- Actions ---
+  async function submitCustomWorkflow() {
+    const uid = getUserId();
+    const name = document.getElementById('newWfName').value.trim() || "Untitled Workflow";
+    const doAnalysis = document.getElementById('checkAnalysis').checked;
+    const doViz = document.getElementById('checkViz').checked;
+
+    if (!doAnalysis && !doViz) {
+      alert("Please select at least one branch.");
+      return;
+    }
+
+    try {
+      // 1. Create Workflow
+      const res = await fetch(`${API_BASE}/workflows`, {
+        method: 'POST', 
+        headers: {'Content-Type': 'application/json', 'X-User-ID': uid},
+        body: JSON.stringify({ name })
+      });
+      
+      if (!res.ok) throw new Error("Failed to create workflow");
+      const wf = await res.json();
+
+      // 2. Add Jobs based on selection
+      const jobs = [];
+      if (doAnalysis) {
+        jobs.push({ branch_name: "analysis-core", job_type: "tissue_mask", input_path: "data/CMU-1.svs", output_path: "outputs/mask.png" });
+        jobs.push({ branch_name: "analysis-core", job_type: "instanseg_cell_seg", input_path: "data/CMU-1.svs", output_path: "outputs/cells.json" });
+      }
+      if (doViz) {
+        jobs.push({ branch_name: "visualization", job_type: "preview_downsample", input_path: "data/CMU-1.svs", output_path: "outputs/thumb.png" });
+      }
+
+      for(let j of jobs) {
+        await fetch(`${API_BASE}/workflows/${wf.workflow_id}/jobs`, {
+          method: 'POST', 
+          headers: {'Content-Type': 'application/json', 'X-User-ID': uid},
+          body: JSON.stringify(j)
+        });
+      }
+
+      closeModal();
+      await loadWorkflows();
+      selectWorkflow(wf.workflow_id, name);
+
+    } catch (e) {
+      alert("Error: " + e.message);
+    }
+  }
+
+  async function cancelJob(jobId) {
+    const uid = getUserId();
+    if(!confirm('Stop this job? Note: This will cancel subsequent jobs in this branch.')) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/jobs/${jobId}/cancel`, {
+        method: 'POST',
+        headers: { 'X-User-ID': uid }
+      });
+      const json = await res.json();
+      if (res.ok) {
+        fetchWorkflowDetails(); 
+      } else {
+        alert("Failed: " + (json.detail || "Unknown error"));
+      }
+    } catch (e) { alert(e); }
+  }
+
+  /**
+   * ==========================================
+   * 4. UI RENDERING
+   * ==========================================
+   */
+
+  function renderWorkflowList(list) {
+    const container = document.getElementById('workflowList');
+    container.innerHTML = '';
+    list.forEach(wf => {
+      const el = document.createElement('div');
+      el.className = `wf-item ${wf.workflow_id === currentWorkflowId ? 'active' : ''}`;
+      el.onclick = () => selectWorkflow(wf.workflow_id, wf.name);
+      
+      const date = new Date(wf.created_at);
+      const timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+      
+      el.innerHTML = `
+        <div class="name" title="${wf.name}">${wf.name}</div>
+        <div class="meta">
+          <span>${timeStr}</span>
+          <span>ID: ${wf.workflow_id.substring(0,4)}</span>
+        </div>
+      `;
+      container.appendChild(el);
+    });
+  }
+
+  function selectWorkflow(id, name) {
+    currentWorkflowId = id;
+    document.getElementById('wfTitle').textContent = name;
+    document.getElementById('wfIdDisplay').textContent = "UUID: " + id;
+    loadWorkflows(); 
+   
+    if (pollInterval) clearInterval(pollInterval);
+    fetchWorkflowDetails();
+    pollInterval = setInterval(fetchWorkflowDetails, 1000); 
+  }
+
+  function renderDashboard(data) {
+    // Status Badge
+    const statusBadge = document.getElementById('wfStatusBadge');
+    statusBadge.textContent = data.status;
+    statusBadge.className = `status-badge ${data.status}`;
+    statusBadge.style.display = 'inline-block';
+
+    // Swimlanes
+    const branches = {};
+    data.jobs.forEach(job => {
+      const bKey = job.branch_name || job.branch_id;
+      if (!branches[bKey]) branches[bKey] = [];
+      branches[bKey].push(job);
+    });
+
+    const container = document.getElementById('swimlanes');
+    container.innerHTML = '';
+    
+    if (Object.keys(branches).length === 0) {
+      container.innerHTML = '<div style="color:#9ca3af; padding:20px; font-style:italic;">No jobs in this workflow.</div>';
+    }
+
+    Object.keys(branches).forEach(bName => {
+      const col = document.createElement('div');
+      col.className = 'branch-column';
+     
+      const header = document.createElement('div');
+      header.className = 'branch-header';
+      header.innerHTML = `
+         <span>${bName}</span>
+         <span class="branch-tag">${branches[bName].length} Jobs</span>
+      `;
+      col.appendChild(header);
+
+      branches[bName].forEach(job => {
+        const card = createJobCard(job);
+        col.appendChild(card);
+      });
+
+      container.appendChild(col);
+    });
+
+    renderPreviews(data.jobs);
+  }
+
+  function createJobCard(job) {
+    const card = document.createElement('div');
+    card.className = `job-card ${job.status}`;
+   
+    const progressPct = Math.round(job.progress * 100);
+    const canCancel = (job.status === 'PENDING' || job.status === 'RUNNING');
+   
+    card.innerHTML = `
+      <div class="job-header">
+        <div class="job-type">${formatJobType(job.type)}</div>
+        <span class="status-badge ${job.status}">${job.status}</span>
+      </div>
+      <div class="job-id">ID: ${job.job_id.substring(0,8)}</div>
+     
+      <div class="progress-track">
+        <div class="progress-fill" style="width: ${progressPct}%"></div>
+      </div>
+     
+      ${canCancel ? `<button class="btn-sm-cancel" onclick="cancelJob('${job.job_id}')">Cancel Job</button>` : ''}
+    `;
+    return card;
+  }
+
+  function renderPreviews(jobs) {
+    const grid = document.getElementById('previewGrid');
+    const section = document.getElementById('previewSection');
+    let hasPreview = false;
+    const activePreviewIds = new Set(); 
+
+    jobs.forEach(job => {
+      if (job.status === 'SUCCEEDED' && job.output_path) {
+        let displayImg = null;
+        let downloadLink = job.output_path;
+
+        if (job.output_path.endsWith('.json')) {
+            displayImg = job.output_path.replace('.json', '_overlay.png');
+        } 
+        else if (job.output_path.match(/\.(png|jpg|jpeg)$/i)) {
+            displayImg = job.output_path;
+        }
+
+        if (displayImg) {
+            hasPreview = true;
+            const elementId = `preview-box-${job.job_id}`;
+            activePreviewIds.add(elementId);
+
+            if (!document.getElementById(elementId)) {
+                const div = document.createElement('div');
+                div.className = 'preview-box';
+                div.id = elementId; 
+                div.innerHTML = `
+                  <img src="/${displayImg}?t=${new Date().getTime()}" 
+                       alt="Result" 
+                       class="preview-img"
+                       onerror="this.src='https://placehold.co/400x300?text=No+Preview'">
+                  <div class="preview-meta">
+                     <strong>${formatJobType(job.type)}</strong>
+                     <a href="/${downloadLink}" target="_blank" class="preview-link">Download</a>
+                  </div>
+                `;
+                grid.appendChild(div);
+            }
+        }
+      }
+    });
+
+    Array.from(grid.children).forEach(child => {
+        if (!activePreviewIds.has(child.id)) {
+            child.remove();
+        }
+    });
+   
+    if (hasPreview) {
+      section.classList.remove('hidden');
+    } else {
+      section.classList.add('hidden');
+    }
+  }
+
+  // --- Modal Logic ---
+  function openCreateModal() {
+    const uid = getUserId();
+    if(!uid) return;
+    document.getElementById('newWfName').value = "Batch " + new Date().toISOString().slice(11,19);
+    document.getElementById('createModal').style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('createModal').style.display = 'none';
+  }
+
+  // Init
+  loadWorkflows();
+</script>
+</body>
+</html>

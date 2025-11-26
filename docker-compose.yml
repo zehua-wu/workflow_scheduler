@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  # Service 1: InstanSeg + OpenSlide
+  scheduler:
+    build: .             # Dockerfile
+    container_name: workflow-scheduler
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app/app         
+      - ./data:/app/data       
+      - ./outputs:/app/outputs 
+    depends_on:
+      - db                     
+    environment:
+      - MAX_WORKERS=4
+      - MAX_ACTIVE_USERS=3
+      - DATABASE_URL=postgresql://bws_user:bws_password@db:5432/bws_db
+    restart: always
+
+  # Service 2: PostgreSQL
+  db:
+    image: postgres:16
+    container_name: bws-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bws_user      
+      POSTGRES_PASSWORD: bws_password  
+      POSTGRES_DB: bws_db         
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

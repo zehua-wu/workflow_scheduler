@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+sqlalchemy
+pillow
+numpy
+
+
+psycopg2-binary
+
+
+torch --index-url https://download.pytorch.org/whl/cpu
+torchvision --index-url https://download.pytorch.org/whl/cpu
+
+
+instanseg
+openslide-python
+opencv-python-headless

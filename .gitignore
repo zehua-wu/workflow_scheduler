@@ -1,0 +1,21 @@
+--- Python ---
+
+pycache/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+--- System ---
+
+.DS_Store
+Thumbs.db
+
+--- Project Data & Outputs (不要上传大文件和结果) ---
+
+data/
+outputs/
+
+--- Docker ---
+
+postgres_data/
